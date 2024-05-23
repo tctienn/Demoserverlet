@@ -18,6 +18,9 @@ public class ProductDAO {
 	private static final String INSERT_INTO = "insert into product(name, price, quantity, image, id_catergory) value (?,?,?,?,?);";
 	private static final String UPDATE_BY_ID = "update product SET name = ?, price = ?, quantity = ?, image = ?, id_catergory = ? where id = ?;";
 	private static final String DELETE_BY_ID = "update product SET enabel=1 where id = ?;";
+	private static final String COUNT_ALL_PRODUCTS = "select count(*) from product where enabel=0;";
+	private static final String SELECT_PRODUCTS_BY_PAGE = "select * from product where enabel=0 limit ? offset ?;";
+
 
 
 	public ProductDAO() {
@@ -90,6 +93,34 @@ public class ProductDAO {
 		}catch (SQLException e) {
 			e.printStackTrace();
 		}
+	}
+	public int getTotalProducts() {
+		try (PreparedStatement preparedStatement = connection.prepareStatement(COUNT_ALL_PRODUCTS)) {
+			ResultSet rs = preparedStatement.executeQuery();
+			if (rs.next()) {
+				return rs.getInt(1);
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return 0;
+	}
+
+	public List<Product> getProductsPaginated(int limit, int offset) {
+		List<Product> products = new ArrayList<>();
+		try (PreparedStatement preparedStatement = connection.prepareStatement(SELECT_PRODUCTS_BY_PAGE)) {
+			preparedStatement.setInt(1, limit);
+			preparedStatement.setInt(2, offset);
+			ResultSet rs = preparedStatement.executeQuery();
+			while (rs.next()) {
+				int idCategory = rs.getInt("id_catergory");
+				CategoryDAO categoryDAO = new CategoryDAO();
+				products.add(new Product(rs, categoryDAO.findById(idCategory)));
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		return products;
 	}
 	
 }
